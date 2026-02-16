@@ -56,7 +56,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def featured(self, request):
-        """Get featured products (newest 8 products)"""
+        """Get featured products (newest  8 products)"""
         featured_products = self.get_queryset()[:8]
         serializer = self.get_serializer(featured_products, many=True)
         return Response(serializer.data)

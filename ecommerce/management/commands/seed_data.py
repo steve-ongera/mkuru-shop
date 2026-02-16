@@ -1,5 +1,6 @@
 import os
 import shutil
+import random
 from decimal import Decimal
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
@@ -8,7 +9,7 @@ from django.conf import settings
 
 
 class Command(BaseCommand):
-    help = 'Seeds the database with Kenyan product data and copies images'
+    help = 'Seeds the database with Kenyan product data and randomly assigns available images'
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -18,10 +19,38 @@ class Command(BaseCommand):
             help='Path to the images directory'
         )
 
+    def get_available_images(self, images_path):
+        """Get list of all image files in the directory"""
+        if not os.path.exists(images_path):
+            return []
+        
+        # Supported image extensions
+        image_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'}
+        
+        # Get all image files
+        images = []
+        for filename in os.listdir(images_path):
+            if os.path.isfile(os.path.join(images_path, filename)):
+                ext = os.path.splitext(filename)[1].lower()
+                if ext in image_extensions:
+                    images.append(filename)
+        
+        return images
+
     def handle(self, *args, **options):
         images_source_path = options['images_path']
         
         self.stdout.write(self.style.WARNING('Starting database seeding...'))
+        
+        # Get available images
+        available_images = self.get_available_images(images_source_path)
+        
+        if available_images:
+            self.stdout.write(self.style.SUCCESS(f'Found {len(available_images)} images in directory'))
+            self.stdout.write(f'Images: {", ".join(available_images[:5])}{"..." if len(available_images) > 5 else ""}')
+        else:
+            self.stdout.write(self.style.WARNING(f'⚠ No images found in: {images_source_path}'))
+            self.stdout.write(self.style.WARNING('Products will be created without images'))
         
         # Create superuser if doesn't exist
         if not User.objects.filter(username='admin').exists():
@@ -71,7 +100,7 @@ class Command(BaseCommand):
             categories[category.name] = category
             self.stdout.write(self.style.SUCCESS(f'✓ Created category: {category.name}'))
         
-        # Kenyan products data
+        # Kenyan products data (without specific image names)
         products_data = [
             # Electronics
             {
@@ -80,7 +109,6 @@ class Command(BaseCommand):
                 'price': Decimal('45999.00'),
                 'category': categories['Electronics'],
                 'stock': 25,
-                'image_name': 'samsung_a54.jpg'
             },
             {
                 'name': 'HP Pavilion 15 Laptop',
@@ -88,7 +116,6 @@ class Command(BaseCommand):
                 'price': Decimal('65999.00'),
                 'category': categories['Electronics'],
                 'stock': 15,
-                'image_name': 'hp_pavilion.jpg'
             },
             {
                 'name': 'Tecno Camon 20 Pro',
@@ -96,7 +123,6 @@ class Command(BaseCommand):
                 'price': Decimal('28999.00'),
                 'category': categories['Electronics'],
                 'stock': 40,
-                'image_name': 'tecno_camon.jpg'
             },
             {
                 'name': 'Infinix Smart TV 43 Inch',
@@ -104,7 +130,6 @@ class Command(BaseCommand):
                 'price': Decimal('32999.00'),
                 'category': categories['Electronics'],
                 'stock': 12,
-                'image_name': 'infinix_tv.jpg'
             },
             {
                 'name': 'JBL Flip 6 Bluetooth Speaker',
@@ -112,7 +137,6 @@ class Command(BaseCommand):
                 'price': Decimal('14999.00'),
                 'category': categories['Electronics'],
                 'stock': 30,
-                'image_name': 'jbl_speaker.jpg'
             },
             
             # Fashion & Clothing
@@ -122,7 +146,6 @@ class Command(BaseCommand):
                 'price': Decimal('12999.00'),
                 'category': categories['Fashion & Clothing'],
                 'stock': 50,
-                'image_name': 'nike_airmax.jpg'
             },
             {
                 'name': 'Ankara Print Dress',
@@ -130,7 +153,6 @@ class Command(BaseCommand):
                 'price': Decimal('3499.00'),
                 'category': categories['Fashion & Clothing'],
                 'stock': 35,
-                'image_name': 'ankara_dress.jpg'
             },
             {
                 'name': 'Maasai Leather Sandals',
@@ -138,7 +160,6 @@ class Command(BaseCommand):
                 'price': Decimal('2999.00'),
                 'category': categories['Fashion & Clothing'],
                 'stock': 60,
-                'image_name': 'maasai_sandals.jpg'
             },
             {
                 'name': 'Khanga Fabric (2-piece set)',
@@ -146,7 +167,6 @@ class Command(BaseCommand):
                 'price': Decimal('1299.00'),
                 'category': categories['Fashion & Clothing'],
                 'stock': 100,
-                'image_name': 'khanga.jpg'
             },
             {
                 'name': 'Kiondo Basket Bag',
@@ -154,7 +174,6 @@ class Command(BaseCommand):
                 'price': Decimal('1899.00'),
                 'category': categories['Fashion & Clothing'],
                 'stock': 45,
-                'image_name': 'kiondo.jpg'
             },
             
             # Home & Kitchen
@@ -164,7 +183,6 @@ class Command(BaseCommand):
                 'price': Decimal('3999.00'),
                 'category': categories['Home & Kitchen'],
                 'stock': 50,
-                'image_name': 'sufuria_set.jpg'
             },
             {
                 'name': 'Ramtons Microwave Oven 20L',
@@ -172,7 +190,6 @@ class Command(BaseCommand):
                 'price': Decimal('8999.00'),
                 'category': categories['Home & Kitchen'],
                 'stock': 20,
-                'image_name': 'ramtons_microwave.jpg'
             },
             {
                 'name': 'Runda Blender 2L',
@@ -180,7 +197,6 @@ class Command(BaseCommand):
                 'price': Decimal('4999.00'),
                 'category': categories['Home & Kitchen'],
                 'stock': 35,
-                'image_name': 'blender.jpg'
             },
             {
                 'name': 'Mkeka Traditional Mat',
@@ -188,7 +204,6 @@ class Command(BaseCommand):
                 'price': Decimal('1499.00'),
                 'category': categories['Home & Kitchen'],
                 'stock': 70,
-                'image_name': 'mkeka.jpg'
             },
             {
                 'name': 'Royco Spice Rack Organizer',
@@ -196,7 +211,6 @@ class Command(BaseCommand):
                 'price': Decimal('1299.00'),
                 'category': categories['Home & Kitchen'],
                 'stock': 55,
-                'image_name': 'spice_rack.jpg'
             },
             
             # Sports & Fitness
@@ -206,7 +220,6 @@ class Command(BaseCommand):
                 'price': Decimal('2499.00'),
                 'category': categories['Sports & Fitness'],
                 'stock': 40,
-                'image_name': 'yoga_mat.jpg'
             },
             {
                 'name': 'Football (Official Size 5)',
@@ -214,7 +227,6 @@ class Command(BaseCommand):
                 'price': Decimal('1899.00'),
                 'category': categories['Sports & Fitness'],
                 'stock': 80,
-                'image_name': 'football.jpg'
             },
             {
                 'name': 'Dumbbells Set (5kg pair)',
@@ -222,7 +234,6 @@ class Command(BaseCommand):
                 'price': Decimal('3499.00'),
                 'category': categories['Sports & Fitness'],
                 'stock': 30,
-                'image_name': 'dumbbells.jpg'
             },
             {
                 'name': 'Skipping Rope with Counter',
@@ -230,7 +241,6 @@ class Command(BaseCommand):
                 'price': Decimal('899.00'),
                 'category': categories['Sports & Fitness'],
                 'stock': 100,
-                'image_name': 'skipping_rope.jpg'
             },
             {
                 'name': 'Swimming Goggles & Cap Set',
@@ -238,7 +248,6 @@ class Command(BaseCommand):
                 'price': Decimal('1299.00'),
                 'category': categories['Sports & Fitness'],
                 'stock': 45,
-                'image_name': 'swimming_goggles.jpg'
             },
             
             # Books & Stationery
@@ -248,7 +257,6 @@ class Command(BaseCommand):
                 'price': Decimal('2499.00'),
                 'category': categories['Books & Stationery'],
                 'stock': 50,
-                'image_name': 'ngugi_books.jpg'
             },
             {
                 'name': 'Kenya Primary Notebooks (10pcs)',
@@ -256,7 +264,6 @@ class Command(BaseCommand):
                 'price': Decimal('499.00'),
                 'category': categories['Books & Stationery'],
                 'stock': 200,
-                'image_name': 'notebooks.jpg'
             },
             {
                 'name': 'Staedtler Geometry Set',
@@ -264,7 +271,6 @@ class Command(BaseCommand):
                 'price': Decimal('899.00'),
                 'category': categories['Books & Stationery'],
                 'stock': 80,
-                'image_name': 'geometry_set.jpg'
             },
             {
                 'name': 'Kenya Map Wall Chart',
@@ -272,7 +278,6 @@ class Command(BaseCommand):
                 'price': Decimal('799.00'),
                 'category': categories['Books & Stationery'],
                 'stock': 60,
-                'image_name': 'kenya_map.jpg'
             },
             {
                 'name': 'Bic Pen Pack (50pcs)',
@@ -280,7 +285,6 @@ class Command(BaseCommand):
                 'price': Decimal('999.00'),
                 'category': categories['Books & Stationery'],
                 'stock': 150,
-                'image_name': 'bic_pens.jpg'
             },
             
             # Health & Beauty
@@ -290,7 +294,6 @@ class Command(BaseCommand):
                 'price': Decimal('1299.00'),
                 'category': categories['Health & Beauty'],
                 'stock': 70,
-                'image_name': 'shea_butter.jpg'
             },
             {
                 'name': 'African Black Soap',
@@ -298,7 +301,6 @@ class Command(BaseCommand):
                 'price': Decimal('599.00'),
                 'category': categories['Health & Beauty'],
                 'stock': 90,
-                'image_name': 'black_soap.jpg'
             },
             {
                 'name': 'Hair Bonnet Satin (Pack of 3)',
@@ -306,7 +308,6 @@ class Command(BaseCommand):
                 'price': Decimal('799.00'),
                 'category': categories['Health & Beauty'],
                 'stock': 100,
-                'image_name': 'hair_bonnet.jpg'
             },
             {
                 'name': 'Aloe Vera Gel 250ml',
@@ -314,7 +315,6 @@ class Command(BaseCommand):
                 'price': Decimal('899.00'),
                 'category': categories['Health & Beauty'],
                 'stock': 80,
-                'image_name': 'aloe_vera.jpg'
             },
             {
                 'name': 'Essential Oils Set (6 bottles)',
@@ -322,7 +322,6 @@ class Command(BaseCommand):
                 'price': Decimal('2499.00'),
                 'category': categories['Health & Beauty'],
                 'stock': 40,
-                'image_name': 'essential_oils.jpg'
             },
         ]
         
@@ -331,30 +330,39 @@ class Command(BaseCommand):
         products_media_path = os.path.join(media_root, 'products')
         os.makedirs(products_media_path, exist_ok=True)
         
-        # Create products
+        # Shuffle images for random assignment
+        if available_images:
+            random.shuffle(available_images)
+        
+        # Create products and assign random images
         products_created = 0
+        image_index = 0
+        
         for product_data in products_data:
-            image_name = product_data.pop('image_name')
-            
-            # Try to copy image if source path exists
-            if os.path.exists(images_source_path):
+            # Assign random image if available
+            if available_images:
+                # Use modulo to cycle through images if we have fewer images than products
+                image_name = available_images[image_index % len(available_images)]
+                image_index += 1
+                
                 source_image = os.path.join(images_source_path, image_name)
-                if os.path.exists(source_image):
-                    dest_image = os.path.join(products_media_path, image_name)
-                    try:
+                dest_image = os.path.join(products_media_path, image_name)
+                
+                try:
+                    # Copy image if not already copied
+                    if not os.path.exists(dest_image):
                         shutil.copy2(source_image, dest_image)
-                        product_data['image'] = f'products/{image_name}'
                         self.stdout.write(f'  ✓ Copied image: {image_name}')
-                    except Exception as e:
-                        self.stdout.write(self.style.WARNING(f'  ⚠ Could not copy {image_name}: {str(e)}'))
-                else:
-                    self.stdout.write(self.style.WARNING(f'  ⚠ Image not found: {image_name}'))
-            else:
-                self.stdout.write(self.style.WARNING(f'  ⚠ Images directory not found: {images_source_path}'))
+                    
+                    product_data['image'] = f'products/{image_name}'
+                except Exception as e:
+                    self.stdout.write(self.style.WARNING(f'  ⚠ Could not copy {image_name}: {str(e)}'))
             
             product = Product.objects.create(**product_data)
             products_created += 1
-            self.stdout.write(self.style.SUCCESS(f'✓ Created product: {product.name} (KES {product.price})'))
+            
+            image_status = f'with image: {image_name}' if 'image' in product_data else 'without image'
+            self.stdout.write(self.style.SUCCESS(f'✓ Created product: {product.name} ({image_status}) - KES {product.price}'))
         
         # Summary
         self.stdout.write(self.style.SUCCESS('\n' + '='*60))
@@ -362,6 +370,15 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS('='*60))
         self.stdout.write(self.style.SUCCESS(f'✓ Categories created: {len(categories_data)}'))
         self.stdout.write(self.style.SUCCESS(f'✓ Products created: {products_created}'))
+        
+        if available_images:
+            self.stdout.write(self.style.SUCCESS(f'✓ Images found: {len(available_images)}'))
+            self.stdout.write(self.style.SUCCESS(f'✓ Images assigned randomly to products'))
+        else:
+            self.stdout.write(self.style.WARNING('⚠ No images found - products created without images'))
+            self.stdout.write(self.style.WARNING(f'   Add images to: {images_source_path}'))
+            self.stdout.write(self.style.WARNING('   Then run: python manage.py seed_data'))
+        
         self.stdout.write(self.style.SUCCESS('\nYou can now:'))
         self.stdout.write('  1. Visit http://localhost:8000/admin to manage products')
         self.stdout.write('  2. Login with username: admin, password: admin123')

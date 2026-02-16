@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { productsAPI } from '../services/api';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import '../ProductDetail.css'; // Import the CSS file
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -67,7 +68,7 @@ const ProductDetail = () => {
       <div className="error-container">
         <h2>Product not found</h2>
         <p>The product you're looking for doesn't exist or has been removed.</p>
-        <Link to="/products" className="btn btn-primary">
+        <Link to="/products" className="btn-primary">
           Browse Products
         </Link>
       </div>
@@ -260,7 +261,7 @@ const ProductDetail = () => {
           {!product.in_stock && (
             <div className="out-of-stock-message">
               <p>This product is currently out of stock.</p>
-              <Link to="/products" className="btn btn-secondary">
+              <Link to="/products" className="btn-secondary">
                 Browse Similar Products
               </Link>
             </div>

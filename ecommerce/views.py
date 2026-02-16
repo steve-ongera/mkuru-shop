@@ -52,7 +52,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         if category_id:
             queryset = queryset.filter(category_id=category_id)
         
-        return queryset
+        return queryset 
     
     @action(detail=False, methods=['get'])
     def featured(self, request):
